@@ -332,7 +332,7 @@
         // Load existing configuration
         async function loadExistingConfiguration() {
             try {
-                showFeedback('Loading existing configuration...', 'loading');
+                showFeedback('Loading...', 'loading');
                 
                 const response = await fetch(`${API_BASE_URL}?chat_id=${chatId}`);
                 
@@ -354,14 +354,21 @@
                     
                     hideFeedback();
                 } else if (response.status === 404) {
-                    // New user - no existing configuration
+                    // New user - no existing configuration, this is normal
                     hideFeedback();
                 } else {
-                    throw new Error(`Server responded with status ${response.status}`);
+                    // Only show error for actual server errors (500, etc.)
+                    throw new Error(`Server error: ${response.status}`);
                 }
             } catch (error) {
-                console.error('Error loading configuration:', error);
-                showFeedback('Could not load existing configuration. You can still save new settings.', 'error');
+                // Only show error message for actual network/server errors
+                if (error.name === 'TypeError' || error.message.includes('Server error')) {
+                    console.error('Error loading configuration:', error);
+                    showFeedback('Unable to connect to server. You can still save new settings.', 'error');
+                } else {
+                    // For other errors, just hide loading without showing error
+                    hideFeedback();
+                }
             }
         }
 
