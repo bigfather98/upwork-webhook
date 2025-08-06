@@ -339,16 +339,28 @@
                 if (response.ok) {
                     const data = await response.json();
                     
-                    // Populate form with existing data
-                    if (data.webhook_url) {
-                        webhookUrlInput.value = data.webhook_url;
+                    // Handle array response format
+                    let configData = null;
+                    if (Array.isArray(data) && data.length > 0) {
+                        configData = data[0]; // Get first item from array
+                    } else if (data && !Array.isArray(data)) {
+                        configData = data; // Handle direct object response
                     }
                     
-                    if (data.job_preference) {
-                        const radioInput = document.querySelector(`input[value="${data.job_preference}"]`);
-                        if (radioInput) {
-                            radioInput.checked = true;
-                            updateRadioStyles();
+                    // Populate form with existing data
+                    if (configData) {
+                        if (configData.webhook_url) {
+                            webhookUrlInput.value = configData.webhook_url;
+                        }
+                        
+                        // Handle both job_preference and webhook_preference field names
+                        const preference = configData.job_preference || configData.webhook_preference;
+                        if (preference) {
+                            const radioInput = document.querySelector(`input[value="${preference}"]`);
+                            if (radioInput) {
+                                radioInput.checked = true;
+                                updateRadioStyles();
+                            }
                         }
                     }
                     
@@ -425,6 +437,18 @@
 
                 if (response.ok) {
                     showFeedback('Configuration saved successfully!', 'success');
+                    
+                    // Auto-close Telegram WebApp after successful save
+                    setTimeout(() => {
+                        if (window.Telegram && window.Telegram.WebApp) {
+                            window.Telegram.WebApp.close();
+                        } else {
+                            // Fallback for non-Telegram environments
+                            if (confirm('Configuration saved! Close this window?')) {
+                                window.close();
+                            }
+                        }
+                    }, 1500); // Wait 1.5 seconds to show success message
                 } else {
                     throw new Error(`Server responded with status ${response.status}`);
                 }
