@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Ensures proper rendering and touch zooming for mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Web App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --upwork-green: #108a00;
+            --upwork-light-green: #14a800;
+            --upwork-dark-green: #0e7812;
+            --upwork-white: #ffffff;
+            --upwork-light-gray: #f9f9f9;
+            --upwork-medium-gray: #e4e5e7;
+            --upwork-text-gray: #5e6d55;
+            --upwork-dark-gray: #001e00;
+            --base-font-family: 'Helvetica Neue', Arial, sans-serif;
+            --base-font-size: 16px;
+            --spacing-unit: 1rem;
+            --input-border-radius: 8px;
+            --button-border-radius: 8px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: var(--base-font-size);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            font-family: var(--base-font-family);
+            align-items: center;
+            background-color: var(--upwork-white);
+            width: 100%;
+            min-height: 120vh;
+            margin: 0;
+            padding: var(--spacing-unit);
+            color: var(--upwork-dark-gray);
+        }
+
+        .container {
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin: 0 auto;
+            align-items: center;
+            padding-top: 0;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            padding-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h2 {
+            color: var(--upwork-light-green);
+            margin-bottom: 0.5rem;
+            font-size: 1.875rem;
+            line-height: 1.2;
+        }
+
+        h3 {
+            font-size: 0.9rem;
+            font-weight: normal;
+            margin: 0 0 1rem 0;
+            color: var(--upwork-text-gray);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        h4 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin: 0 0 1.5rem 0;
+            text-align: center;
+            color: var(--upwork-text-gray);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h4 a {
+            color: var(--upwork-light-green);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        h4 a:hover {
+            text-decoration: underline;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .keyword-input {
+            font-size: 1rem;
+            padding: 0.85rem 1rem;
+            width: 100%;
+            border: 1px solid var(--upwork-medium-gray);
+            border-radius: var(--input-border-radius);
+            text-align: center;
+            color: var(--upwork-dark-gray);
+            background-color: var(--upwork-white);
+            transition: border-color 0.2s ease;
+        }
+
+        .keyword-input:focus {
+            outline: none;
+            border-color: var(--upwork-light-green);
+            box-shadow: 0 0 0 2px rgba(20, 168, 0, 0.2);
+        }
+
+        .keyword-input::placeholder {
+            color: #9aaa97;
+        }
+
+        .keyword-input:focus::placeholder {
+            color: transparent;
+        }
+
+        .submit-button {
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 0.85rem 1rem;
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--upwork-light-green);
+            color: var(--upwork-white);
+            border: none;
+            border-radius: var(--button-border-radius);
+            cursor: pointer;
+            text-align: center;
+            line-height: 1.3;
+            transition: background-color 0.2s ease;
+            margin-top: 1rem;
+        }
+
+        .submit-button:hover {
+            background-color: var(--upwork-dark-green);
+        }
+
+        .submit-button:disabled {
+            background-color: #8dc989;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--upwork-white);
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+        }
+
+        .loading-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            height: 100%;
+        }
+
+        .footer {
+            margin-top: 1.5rem;
+            text-align: center;
+            padding-top: 1rem;
+            padding-left: 0rem;
+            padding-right: 0rem;
+            border-top: 1px solid var(--upwork-medium-gray);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        /* Filter Styles */
+        .filter-container {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 1.5rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .filter-header {
+            background-color: var(--upwork-light-green);
+            color: white;
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .filter-header:hover {
+            background-color: var(--upwork-dark-green);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .filter-count {
+            background: white;
+            color: var(--upwork-light-green);
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        .chevron {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s;
+        }
+
+        .chevron.open {
+            transform: rotate(180deg);
+        }
+
+        .filter-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out, opacity 0.3s;
+            opacity: 0;
+        }
+
+        .filter-panel.open {
+            max-height: 80vh;
+            opacity: 1;
+            overflow-y: auto;
+        }
+
+        .filter-content {
+            padding: 16px;
+            max-height: calc(80vh - 32px);
+            overflow-y: auto;
+        }
+
+        .clear-filters {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #dc2626;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+
+        .clear-filters:hover {
+            color: #b91c1c;
+        }
+
+        .filter-section {
+            margin-bottom: 24px;
+        }
+
+        .filter-title1 {
+            font-weight: 600;
+            color: #374151;
+            font-size: 1rem;
+            color: var(--upwork-white);
+            border: none;
+            border-radius: var(--button-border-radius);
+            cursor: pointer;
+            text-align: center;
+            line-height: 1.3;
+            transition: background-color 0.2s ease;
+        }
+
+        .filter-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--upwork-light-green);
+        }
+
+        .checkbox-label {
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .button-grid {
+            display: grid;
+            gap: 8px;
+        }
+
+        .button-grid.cols-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .filter-button {
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-button:hover {
+            background: #f3f4f6;
+        }
+
+        .filter-button.selected {
+            background: white;
+            color: #374151;
+            border: 2px solid var(--upwork-light-green);
+            box-shadow: 0 2px 8px rgba(20, 168, 0, 0.2);
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        .dollar-sign {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .number-input {
+            width: 100%;
+            padding: 8px 12px 8px 32px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .number-input:focus {
+            border-color: var(--upwork-light-green);
+        }
+
+        .number-input.has-value {
+            border-color: var(--upwork-light-green);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Custom scrollbar styling */
+        .filter-panel::-webkit-scrollbar,
+        .filter-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .filter-panel::-webkit-scrollbar-track,
+        .filter-content::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .filter-panel::-webkit-scrollbar-thumb,
+        .filter-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .filter-panel::-webkit-scrollbar-thumb:hover,
+        .filter-content::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .header-card {
+                padding: 1.25rem;
+            }
+            h2 {
+                font-size: 1rem;
+            }
+            h3, h4 {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h2>Upwork Bot</h2></br>
+            <h3>Enter up to 5 keywords for your job alerts</h3>
+            <h3>The bot copy-pastes your keyword in Upwork's search bar. To make sure its working, you may try each of your keyword in Upwork's website first </h3>
+        </div>
+
+        <!-- Filter Component -->
+        <div class="filter-container">
+            <div class="filter-header" onclick="toggleFilter()">
+                <div class="header-content">
+                    <svg class="filter-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+                    </svg>
+                    <span class="filter-title1">Filter Job Alerts (❌still in Beta🛠️)</span>
+                    <span id="filterCount" class="filter-count hidden">0</span>
+                </div>
+                <svg id="chevron" class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </div>
+
+            <div id="filterPanel" class="filter-panel">
+                <div class="filter-content">
+                    <button id="clearFilters" class="clear-filters hidden" onclick="clearAllFilters()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Clear All Filters
+                    </button>
+
+                    <!-- Payment Status -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Payment Status</h3>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="paymentVerified" class="checkbox" onchange="handleCheckboxChange('paymentVerified')">
+                            <span class="checkbox-label">Payment Verified</span>
+                        </label>
+                    </div>
+
+                    <!-- Total Spent -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Total Spent ($)</h3>
+                        <div class="button-grid cols-2" id="totalSpentGrid">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Salary Type -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Salary Type</h3>
+                        <div class="button-grid cols-2" id="salaryGrid">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Hourly Minimum -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Hourly Minimum</h3>
+                        <div class="input-container">
+                            <span class="dollar-sign">$</span>
+                            <input type="number" id="hourlyMinimum" class="number-input" placeholder="0" oninput="handleInputChange('hourlyMinimum', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Fixed-Price Minimum -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Fixed-Price Minimum</h3>
+                        <div class="input-container">
+                            <span class="dollar-sign">$</span>
+                            <input type="number" id="fixedPriceMinimum" class="number-input" placeholder="0" oninput="handleInputChange('fixedPriceMinimum', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Experience Level -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Experience Level</h3>
+                        <div class="button-grid" id="experienceLevelGrid">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Project Length -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Project Length</h3>
+                        <div class="button-grid" id="projectLengthGrid">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Hours per Week -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Hours per Week</h3>
+                        <div class="button-grid" id="hoursPerWeekGrid">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input fields wrapped in a div for better structure and spacing -->
+        <div class="input-group">
+            <input type="text" id="kw1" class="keyword-input" placeholder="Enter keyword1">
+            <input type="text" id="kw2" class="keyword-input" placeholder="Enter keyword2">
+            <input type="text" id="kw3" class="keyword-input" placeholder="Enter keyword3">
+            <input type="text" id="kw4" class="keyword-input" placeholder="Enter keyword4">
+            <input type="text" id="kw5" class="keyword-input" placeholder="Enter keyword5">
+        </div>
+
+
+
+        <!-- Added class to button for specific styling -->
+        <button id="submit" class="submit-button">Submit</button>
+        
+        <div class="footer">
+            <h4>
+                <a href="https://t.me/upworkbotgroup" target="_blank">
+                   👉 Join the Telegram group to get news and updates
+                </a>
+            </h4>
+            <h4>
+                <a href="https://t.me/oljphbot" target="_blank">
+                   👉 Onlinejobsph bot is also available
+                </a>
+            </h4>
+        </div>
+    </div>
+
+    <script>
+        // Ensure Telegram Web App SDK is initialized and ready
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand(); // Expand WebApp to full screen
+
+        const tg = window.Telegram.WebApp;
+        let userData = tg.initDataUnsafe.user;
+        const submitButton = document.getElementById("submit");
+        const originalButtonText = submitButton.innerHTML;
+
+        const inputFields = [
+            document.getElementById("kw1"),
+            document.getElementById("kw2"),
+            document.getElementById("kw3"),
+            document.getElementById("kw4"),
+            document.getElementById("kw5")
+        ];
+
+        // Filter state
+        let filters = {
+            paymentVerified: null, // No default selected
+            totalSpent: null, // No default selected
+            salary: [], // No default selected
+            experienceLevel: [], // No default selected
+            projectLength: [], // No default selected
+            hoursPerWeek: [], // No default selected
+            hourlyMinimum: null, // No default selected
+            fixedPriceMinimum: null // No default selected
+        };
+
+        // Filter options
+        const filterOptions = {
+            totalSpent: ['>0', '>100', '>1,000', '>10,000', '>100,000'],
+            salary: ['Hourly', 'Fixed-Price'],
+            experienceLevel: ['Entry Level', 'Intermediate', 'Expert'],
+            projectLength: ['Less than one month', '1 to 3 months', '3 to 6 months', 'More than 6 months'],
+            hoursPerWeek: ['Less than 30 hrs/week', 'More than 30 hrs/week']
+        };
+
+        let isOpen = false;
+
+        // Initialize the filter component
+        function initializeFilter() {
+            createFilterButtons();
+            updateFilterCount();
+        }
+
+        // Create filter buttons
+        function createFilterButtons() {
+            // Total Spent (single select)
+            const totalSpentGrid = document.getElementById('totalSpentGrid');
+            filterOptions.totalSpent.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'filter-button';
+                button.textContent = option;
+                button.onclick = () => handleSingleSelect('totalSpent', option);
+                totalSpentGrid.appendChild(button);
+            });
+
+            // Multi-select filters
+            const multiSelectFilters = ['salary', 'experienceLevel', 'projectLength', 'hoursPerWeek'];
+            multiSelectFilters.forEach(filterType => {
+                const grid = document.getElementById(filterType + 'Grid');
+                filterOptions[filterType].forEach(option => {
+                    const button = document.createElement('button');
+                    button.className = 'filter-button selected'; // All selected by default
+                    button.textContent = option;
+                    button.onclick = () => handleMultiSelect(filterType, option);
+                    grid.appendChild(button);
+                });
+            });
+        }
+
+        // Toggle filter panel
+        function toggleFilter() {
+            isOpen = !isOpen;
+            const panel = document.getElementById('filterPanel');
+            const chevron = document.getElementById('chevron');
+            
+            if (isOpen) {
+                panel.classList.add('open');
+                chevron.classList.add('open');
+            } else {
+                panel.classList.remove('open');
+                chevron.classList.remove('open');
+            }
+        }
+
+        // Handle single select filters
+        function handleSingleSelect(filterType, value) {
+            // If the clicked value is the currently selected one, do nothing (prevent deselection)
+            if (filters[filterType] === value) {
+                // Optionally, provide user feedback that at least one must be selected
+                console.log(`At least one option must be selected for ${filterType}.`);
+                return;
+            } else {
+                // Select the new value
+                filters[filterType] = value;
+            }
+            updateButtonStates(filterType);
+            updateFilterCount();
+        }
+
+        // Handle multi-select filters
+        function handleMultiSelect(filterType, value) {
+            const currentValues = filters[filterType];
+            const isSelected = currentValues.includes(value);
+            
+            if (isSelected) {
+                // Remove value if already selected
+                // Ensure at least one option remains selected for multi-select filters
+                if (currentValues.length > 1) {
+                    filters[filterType] = currentValues.filter(item => item !== value);
+                } else {
+                    // Optionally, provide user feedback that at least one must be selected
+                    // For now, we prevent deselection if it's the last one.
+                    console.log(`At least one option must be selected for ${filterType}.`);
+                    // You might want to show a popup or a message to the user here.
+                }
+            } else {
+                // Add value if not selected
+                filters[filterType] = [...currentValues, value];
+            }
+            updateButtonStates(filterType);
+            updateFilterCount();
+        }
+
+        // Handle checkbox change
+        function handleCheckboxChange(filterType) {
+            filters[filterType] = !filters[filterType]; // Toggle boolean value
+            updateFilterCount();
+        }
+
+        // Handle input change for number inputs
+        function handleInputChange(filterType, value) {
+            filters[filterType] = value;
+            const input = document.getElementById(filterType);
+            if (value) {
+                input.classList.add('has-value'); // Add class for styling if input has value
+            } else {
+                input.classList.remove('has-value'); // Remove class if input is empty
+            }
+            updateFilterCount();
+        }
+
+        // Update button states to reflect the current filter selection
+        function updateButtonStates(filterType) {
+            const grid = document.getElementById(filterType + 'Grid');
+            // If grid element doesn't exist, return early
+            if (!grid) return;
+            const buttons = grid.querySelectorAll('.filter-button');
+            
+            buttons.forEach(button => {
+                const value = button.textContent;
+                if (filterType === 'totalSpent') {
+                    // Single select: highlight the button if its value matches the filter
+                    if (filters[filterType] === value) {
+                        button.classList.add('selected');
+                    } else {
+                        button.classList.remove('selected');
+                    }
+                } else {
+                    // Multi-select: highlight the button if its value is in the filter array
+                    if (filters[filterType].includes(value)) {
+                        button.classList.add('selected');
+                    } else {
+                        button.classList.remove('selected');
+                    }
+                }
+            });
+        }
+
+        // Clear all applied filters and reset the UI
+        function clearAllFilters() {
+            filters = {
+                paymentVerified: false,
+                totalSpent: '>0',
+                salary: ['Hourly', 'Fixed-Price'],
+                experienceLevel: ['Entry Level', 'Intermediate', 'Expert'],
+                projectLength: ['Less than one month', '1 to 3 months', '3 to 6 months', 'More than 6 months'],
+                hoursPerWeek: ['Less than 30 hrs/week', 'More than 30 hrs/week'],
+                hourlyMinimum: '',
+                fixedPriceMinimum: ''
+            };
+
+            // Reset checkbox visually
+            document.getElementById('paymentVerified').checked = false;
+
+            // Reset input fields visually
+            document.getElementById('hourlyMinimum').value = '';
+            document.getElementById('hourlyMinimum').classList.remove('has-value');
+            document.getElementById('fixedPriceMinimum').value = '';
+            document.getElementById('fixedPriceMinimum').classList.remove('has-value');
+
+            // Reset all filter button states
+            Object.keys(filterOptions).forEach(filterType => {
+                updateButtonStates(filterType);
+            });
+
+            updateFilterCount(); // Update the count display
+        }
+
+        // Update the displayed count of active filters and show/hide the "Clear Filters" button
+        function updateFilterCount() {
+            let count = 0;
+            
+            if (filters.paymentVerified) count++;
+            if (filters.totalSpent) count++;
+            if (filters.salary.length < filterOptions.salary.length) count++; // Count if any salary option is deselected
+            if (filters.experienceLevel.length < filterOptions.experienceLevel.length) count++; // Count if any experience level is deselected
+            if (filters.projectLength.length < filterOptions.projectLength.length) count++; // Count if any project length is deselected
+            if (filters.hoursPerWeek.length < filterOptions.hoursPerWeek.length) count++; // Count if any hours per week is deselected
+            if (filters.hourlyMinimum) count++; // Count if hourly minimum is set
+            if (filters.fixedPriceMinimum) count++; // Count if fixed-price minimum is set
+
+            const countElement = document.getElementById('filterCount');
+            const clearButton = document.getElementById('clearFilters');
+            
+            if (count > 0) {
+                countElement.textContent = count;
+                countElement.classList.remove('hidden'); // Show the count
+                clearButton.classList.remove('hidden'); // Show the clear button
+            } else {
+                countElement.classList.add('hidden'); // Hide the count
+                clearButton.classList.add('hidden'); // Hide the clear button
+            }
+
+            console.log('Current filters:', filters); // Log current filter state for debugging
+        }
+
+        // Fetch keywords and filters from the backend API
+        async function loadKeywords(chat_id) {
+            try {
+                // Construct the URL for fetching data
+                const res = await fetch(`https://n8n.kmonlinesolutions.com/webhook/upwork-get-keywords?chat_id=${chat_id}`);
+                const data = await res.json();
+
+                // Populate input fields with keywords if available
+                if (data.keywords && Array.isArray(data.keywords)) {
+                    for (let i = 0; i < 5; i++) {
+                        if (data.keywords[i]) {
+                            inputFields[i].value = data.keywords[i];
+                        }
+                    }
+                }
+
+                // Determine the source of filter data
+                const webhookFilters = data.filters || data; // Use data.filters if available, otherwise use data directly
+
+                // Update the filters object and UI elements based on webhook data
+                // Payment Verified
+                if (webhookFilters.hasOwnProperty('paymentVerified')) {
+                    filters.paymentVerified = webhookFilters.paymentVerified;
+                    document.getElementById('paymentVerified').checked = !!filters.paymentVerified; // Use !! to convert to boolean true/false
+                }
+
+                // Total Spent (single select)
+                if (webhookFilters.hasOwnProperty('totalSpent')) {
+                    filters.totalSpent = webhookFilters.totalSpent;
+                    updateButtonStates('totalSpent');
+                }
+
+                // Salary Type (multi-select)
+                if (webhookFilters.hasOwnProperty('salary') && Array.isArray(webhookFilters.salary)) {
+                    filters.salary = webhookFilters.salary;
+                    updateButtonStates('salary');
+                }
+
+                // Experience Level (multi-select)
+                if (webhookFilters.hasOwnProperty('experienceLevel') && Array.isArray(webhookFilters.experienceLevel)) {
+                    filters.experienceLevel = webhookFilters.experienceLevel;
+                    updateButtonStates('experienceLevel');
+                }
+
+                // Project Length (multi-select)
+                if (webhookFilters.hasOwnProperty('projectLength') && Array.isArray(webhookFilters.projectLength)) {
+                    filters.projectLength = webhookFilters.projectLength;
+                    updateButtonStates('projectLength');
+                }
+
+                // Hours per Week (multi-select)
+                if (webhookFilters.hasOwnProperty('hoursPerWeek') && Array.isArray(webhookFilters.hoursPerWeek)) {
+                    filters.hoursPerWeek = webhookFilters.hoursPerWeek;
+                    updateButtonStates('hoursPerWeek');
+                }
+
+                // Hourly Minimum
+                if (webhookFilters.hasOwnProperty('hourlyMinimum')) {
+                    filters.hourlyMinimum = webhookFilters.hourlyMinimum;
+                    const hourlyMinInput = document.getElementById('hourlyMinimum');
+                    hourlyMinInput.value = filters.hourlyMinimum;
+                    hourlyMinInput.classList.toggle('has-value', !!filters.hourlyMinimum);
+                }
+
+                // Fixed-Price Minimum
+                if (webhookFilters.hasOwnProperty('fixedPriceMinimum')) {
+                    filters.fixedPriceMinimum = webhookFilters.fixedPriceMinimum;
+                    const fixedPriceMinInput = document.getElementById('fixedPriceMinimum');
+                    fixedPriceMinInput.value = filters.fixedPriceMinimum;
+                    fixedPriceMinInput.classList.toggle('has-value', !!filters.fixedPriceMinimum);
+                }
+
+                updateFilterCount(); // Recalculate and update the filter count
+            } catch (err) {
+                console.error("Error fetching keywords:", err);
+            }
+        }
+
+        // Event listener for the submit button
+        submitButton.addEventListener("click", async () => {
+            submitButton.disabled = true; // Disable button during submission
+            // Show loading indicator
+            submitButton.innerHTML = '<div class="loading-container"><span class="spinner"></span><span>Loading...</span></div>';
+
+            const chat_id = userData?.id; // Get user chat ID from Telegram data
+            if (!chat_id) {
+                // Show error popup if user ID is not available
+                tg.showPopup({ title: 'Error', message: 'Could not get user information. Please restart the app.', buttons: [{type: 'ok'}] });
+                submitButton.disabled = false; // Re-enable button
+                submitButton.innerHTML = originalButtonText; // Restore original button text
+                return;
+            }
+
+            const specialCharRegex = /[^a-zA-Z0-9\s]/; // Regex to find special characters
+            let validationFailed = false; // Flag to track validation status
+
+            // Map input fields to keywords, trim whitespace, and validate
+            const keywords = inputFields.map((field, i) => {
+                const val = field.value.trim();
+                // Validate non-empty keywords for special characters
+                if (val && specialCharRegex.test(val)) {
+                    tg.showPopup({
+                        title: 'Invalid Input',
+                        message: `Keyword ${i + 1} contains special characters. Please use only alphanumeric characters and spaces.`,
+                        buttons: [{type: 'ok'}]
+                    });
+                    validationFailed = true; // Set flag to indicate validation failure
+                    return null; // Mark as invalid
+                }
+                return val ? val : null; // Return keyword or null if empty
+            }).filter(kw => kw !== null); // Remove any null entries (empty or invalid keywords)
+
+            // If validation failed, stop the submission process
+            if (validationFailed) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+                return;
+            }
+
+            // Check if all inputs were empty but user tried to submit
+            if (keywords.length === 0 && inputFields.some(field => field.value.trim() !== "")) {
+                tg.showPopup({
+                    title: 'Invalid Input',
+                    message: 'Please enter at least one valid keyword.',
+                    buttons: [{type: 'ok'}]
+                });
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+                return;
+            }
+
+            // Prepare the payload, sending only active filters to the webhook.
+            // If a filter is not active (default or empty), send it as null.
+            const payloadFilters = {
+                paymentVerified: filters.paymentVerified,
+                totalSpent: filters.totalSpent,
+                salary: filters.salary,
+                experienceLevel: filters.experienceLevel,
+                projectLength: filters.projectLength,
+                hoursPerWeek: filters.hoursPerWeek,
+                hourlyMinimum: filters.hourlyMinimum,
+                fixedPriceMinimum: filters.fixedPriceMinimum
+            };
+
+
+            const payload = {
+                chat_id: chat_id,
+                keywords: keywords,
+                filters: payloadFilters
+            };
+
+            try {
+                // Send the data to the backend webhook
+                const response = await fetch("https://n8n.kmonlinesolutions.com/webhook/upwork-keyword-submit", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                // Handle non-OK HTTP responses
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log("Success:", result);
+
+                // Show success message via Telegram Web App SDK
+                tg.showPopup({
+                    title: 'Success',
+                    message: 'Your keywords and filters have been saved!',
+                    buttons: [{ type: 'ok' }]
+                }, () => {
+                    // Close the Web App after the user clicks 'OK'
+                    tg.close();
+                });
+
+                // Optionally clear inputs or reset state after successful submission
+                // inputFields.forEach(field => field.value = '');
+                // clearAllFilters();
+
+            } catch (error) {
+                console.error("Error submitting data:", error);
+                // Show error message via Telegram Web App SDK
+                tg.showPopup({
+                    title: 'Error',
+                    message: `Failed to save data: ${error.message}. Please try again.`,
+                    buttons: [{ type: 'ok' }]
+                });
+            } finally {
+                // Always reset button state after the operation completes (success or failure)
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+            }
+        });
+        
+        // Initialize the filter component and load keywords when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFilter(); // Set up the filter buttons and initial count
+            const chat_id = userData?.id;
+            if (chat_id) {
+                loadKeywords(chat_id); // Fetch and load existing data if user ID is available
+            } else {
+                console.warn("User ID not found, skipping keyword loading."); // Warn if user data is missing
+            }
+        });
+
+    </script>
+</body>
+</html>
