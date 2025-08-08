@@ -14,6 +14,9 @@
             --upwork-medium-gray: #e4e5e7;
             --upwork-text-gray: #5e6d55;
             --upwork-dark-gray: #001e00;
+            --danger-red: #d9534f;
+            --danger-red-hover: #c9302c;
+            --danger-red-active: #ac2925;
             --base-font-family: 'Helvetica Neue', Arial, sans-serif;
             --base-font-size: 16px;
             --spacing-unit: 1rem;
@@ -170,6 +173,18 @@
             cursor: not-allowed;
         }
 
+        .disable-button {
+            background-color: var(--danger-red);
+        }
+
+        .disable-button:hover {
+            background-color: var(--danger-red-hover);
+        }
+
+        .disable-button:active {
+            background-color: var(--danger-red-active);
+        }
+
         .feedback {
             margin-top: 1.5rem;
             padding: 0.75rem;
@@ -276,6 +291,7 @@
             </div>
 
             <button type="submit" class="submit-button">Save Configuration</button>
+            <button type="button" id="disableButton" class="submit-button disable-button">Disable Webhook</button>
         </form>
 
         <div id="feedback" class="feedback"></div>
@@ -292,6 +308,7 @@
         const radioOptions = document.querySelectorAll('.radio-option');
         const radioInputs = document.querySelectorAll('input[type="radio"]');
         const submitButton = document.querySelector('.submit-button');
+        const disableButton = document.getElementById('disableButton');
         const feedback = document.getElementById('feedback');
 
         // Initialize the application
@@ -317,15 +334,16 @@
         function setupEventListeners() {
             // Form submission
             form.addEventListener('submit', handleFormSubmission);
+            
+            // Disable button click
+            disableButton.addEventListener('click', handleDisableSubmission);
 
             // Radio button interactions
             radioOptions.forEach(option => {
                 option.addEventListener('click', function() {
-                    // Find the actual radio input inside the clicked div and check it
                     const radioInput = this.querySelector('input[type="radio"]');
                     if (radioInput) {
                         radioInput.checked = true;
-                        // Create and dispatch a change event to trigger other listeners
                         const event = new Event('change');
                         radioInput.dispatchEvent(event);
                     }
@@ -339,25 +357,14 @@
 
         // Update radio button styles for all groups
         function updateRadioStyles() {
-            // Group jobPreference styles
-            const jobPreferenceRadios = document.querySelectorAll('input[name="jobPreference"]');
-            jobPreferenceRadios.forEach(radio => {
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
                 const parentOption = radio.closest('.radio-option');
-                if (radio.checked) {
-                    parentOption.classList.add('selected');
-                } else {
-                    parentOption.classList.remove('selected');
-                }
-            });
-
-            // Group webhookOutput styles
-            const webhookOutputRadios = document.querySelectorAll('input[name="webhookOutput"]');
-            webhookOutputRadios.forEach(radio => {
-                const parentOption = radio.closest('.radio-option');
-                if (radio.checked) {
-                    parentOption.classList.add('selected');
-                } else {
-                    parentOption.classList.remove('selected');
+                if (parentOption) {
+                    if (radio.checked) {
+                        parentOption.classList.add('selected');
+                    } else {
+                        parentOption.classList.remove('selected');
+                    }
                 }
             });
         }
@@ -384,25 +391,18 @@
                             webhookUrlInput.value = configData.webhook_url;
                         }
                         
-                        // Set Job Preference radio
                         const jobPreference = configData.job_preference || configData.webhook_preference;
                         if (jobPreference) {
                             const jobRadio = document.querySelector(`input[name="jobPreference"][value="${jobPreference}"]`);
-                            if (jobRadio) {
-                                jobRadio.checked = true;
-                            }
+                            if (jobRadio) jobRadio.checked = true;
                         }
 
-                        // Set Webhook Output radio as per requirements
                         const outputPreference = configData.webhook_output;
                         if (outputPreference) {
                             const outputRadio = document.querySelector(`input[name="webhookOutput"][value="${outputPreference}"]`);
-                            if (outputRadio) {
-                                outputRadio.checked = true;
-                            }
+                            if (outputRadio) outputRadio.checked = true;
                         }
                         
-                        // Update styles for all radio groups at once
                         updateRadioStyles();
                     }
                     
@@ -421,6 +421,58 @@
                 }
             }
         }
+        
+        // Handle disable submission
+        async function handleDisableSubmission() {
+            if (!chatId) {
+                showFeedback('No chat ID available. Cannot disable webhook.', 'error');
+                return;
+            }
+
+            try {
+                submitButton.disabled = true;
+                disableButton.disabled = true;
+                disableButton.textContent = 'Disabling...';
+
+                const requestData = {
+                    webhook_url: null,
+                    job_preference: null,
+                    webhook_output: null,
+                    chat_id: chatId
+                };
+
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    showFeedback('Webhook disabled successfully!', 'success');
+                    
+                    setTimeout(() => {
+                        if (window.Telegram && window.Telegram.WebApp) {
+                            window.Telegram.WebApp.close();
+                        } else {
+                            if (confirm('Webhook disabled! Close this window?')) {
+                                window.close();
+                            }
+                        }
+                    }, 1500);
+                } else {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Error disabling webhook:', error);
+                showFeedback('Failed to disable webhook. Please try again.', 'error');
+            } finally {
+                submitButton.disabled = false;
+                disableButton.disabled = false;
+                disableButton.textContent = 'Disable Webhook';
+            }
+        }
 
         // Handle form submission
         async function handleFormSubmission(event) {
@@ -431,13 +483,10 @@
                 return;
             }
 
-            // Gather form data
             const webhookUrl = webhookUrlInput.value.trim();
             const jobPreference = document.querySelector('input[name="jobPreference"]:checked')?.value;
-            // Get value from new radio group as per requirements
             const webhookOutput = document.querySelector('input[name="webhookOutput"]:checked')?.value;
 
-            // Validate form data
             if (!webhookUrl) {
                 showFeedback('Please enter a webhook URL.', 'error');
                 return;
@@ -448,13 +497,11 @@
                 return;
             }
             
-            // Add validation for the new field
             if (!webhookOutput) {
                 showFeedback('Please select a Webhook Output format.', 'error');
                 return;
             }
 
-            // Validate URL format
             try {
                 new URL(webhookUrl);
             } catch (error) {
@@ -464,9 +511,9 @@
 
             try {
                 submitButton.disabled = true;
+                disableButton.disabled = true;
                 submitButton.textContent = 'Saving...';
 
-                // Add new key-value pair to the request as per requirements
                 const requestData = {
                     webhook_url: webhookUrl,
                     chat_id: chatId,
@@ -502,6 +549,7 @@
                 showFeedback('Failed to save configuration. Please try again.', 'error');
             } finally {
                 submitButton.disabled = false;
+                disableButton.disabled = false;
                 submitButton.textContent = 'Save Configuration';
             }
         }
