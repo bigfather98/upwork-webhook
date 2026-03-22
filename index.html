@@ -121,6 +121,7 @@
             position: relative;
             cursor: pointer;
             transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
         input[type="radio"]:checked {
@@ -145,8 +146,17 @@
             flex-grow: 1;
         }
 
-        .submit-button {
-            width: 100%;
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .submit-button,
+        .test-button,
+        .disable-button {
+            flex: 1;
             padding: 0.875rem;
             background-color: var(--upwork-green);
             color: var(--upwork-white);
@@ -157,18 +167,22 @@
             font-weight: 500;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            margin-top: 1rem;
+            width: 100%;
         }
 
-        .submit-button:hover {
+        .submit-button:hover,
+        .test-button:hover {
             background-color: var(--upwork-light-green);
         }
 
-        .submit-button:active {
+        .submit-button:active,
+        .test-button:active {
             background-color: var(--upwork-dark-green);
         }
 
-        .submit-button:disabled {
+        .submit-button:disabled,
+        .test-button:disabled,
+        .disable-button:disabled {
             background-color: var(--upwork-medium-gray);
             cursor: not-allowed;
         }
@@ -177,11 +191,11 @@
             background-color: var(--danger-red);
         }
 
-        .disable-button:hover {
+        .disable-button:hover:not(:disabled) {
             background-color: var(--danger-red-hover);
         }
 
-        .disable-button:active {
+        .disable-button:active:not(:disabled) {
             background-color: var(--danger-red-active);
         }
 
@@ -206,10 +220,10 @@
             border: 1px solid #f5c6cb;
         }
 
-        .loading {
-            text-align: center;
-            color: var(--upwork-text-gray);
-            font-style: italic;
+        .feedback.loading {
+            background-color: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
         }
 
         @media (max-width: 768px) {
@@ -228,6 +242,11 @@
             .radio-group {
                 gap: 0.5rem;
             }
+
+            .button-group {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
         }
 
         @media (max-width: 480px) {
@@ -243,7 +262,9 @@
                 padding: 0.625rem;
             }
 
-            .submit-button {
+            .submit-button,
+            .test-button,
+            .disable-button {
                 padding: 0.75rem;
             }
         }
@@ -251,114 +272,98 @@
 </head>
 <body>
     <div class="main-container">
-        <h1>Webhook Configuration</h1>
-        <form id="webhookForm">
-            <div class="form-group">
-                <label for="webhookUrl">Webhook URL:</label>
-                <input type="text" id="webhookUrl" name="webhookUrl" placeholder="Enter your webhook URL" required>
-            </div>
+        <h1>Webhook Setup</h1>
 
-            <div class="form-group">
-                <label>Job Preferences:</label>
-                <div class="radio-group">
-                    <div class="radio-option" data-value="all">
-                        <input type="radio" id="allJobs" name="jobPreference" value="all">
-                        <label for="allJobs" class="radio-label">Send all jobs</label>
-                    </div>
-                    <div class="radio-option" data-value="keywords">
-                        <input type="radio" id="keywordJobs" name="jobPreference" value="keywords">
-                        <label for="keywordJobs" class="radio-label">Send only jobs matching my keywords</label>
-                    </div>
+        <div class="form-group">
+            <label for="webhookUrl">Webhook URL:</label>
+            <input type="text" id="webhookUrl" name="webhookUrl" placeholder="Enter your webhook URL">
+        </div>
+
+        <div class="form-group">
+            <label>Job Preferences:</label>
+            <div class="radio-group">
+                <div class="radio-option" data-value="all">
+                    <input type="radio" id="allJobs" name="jobPreference" value="all" checked>
+                    <label for="allJobs" class="radio-label">Send all jobs</label>
+                </div>
+                <div class="radio-option" data-value="keywords">
+                    <input type="radio" id="keywordJobs" name="jobPreference" value="keywords">
+                    <label for="keywordJobs" class="radio-label">Send only jobs matching my keywords</label>
                 </div>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label>Webhook Output:</label>
-                <div class="radio-group">
-                    <div class="radio-option" data-value="Raw Text">
-                        <input type="radio" id="rawTextOutput" name="webhookOutput" value="Raw Text">
-                        <label for="rawTextOutput" class="radio-label">Raw Text</label>
-                    </div>
-                    <div class="radio-option" data-value="JSON">
-                        <input type="radio" id="jsonOutput" name="webhookOutput" value="JSON">
-                        <label for="jsonOutput" class="radio-label">JSON</label>
-                    </div>
-                    <div class="radio-option" data-value="Slack">
-                        <input type="radio" id="slackOutput" name="webhookOutput" value="Slack">
-                        <label for="slackOutput" class="radio-label">Slack</label>
-                    </div>
-                </div>
-            </div>
 
-            <button type="submit" class="submit-button">Save Configuration</button>
-            <button type="button" id="disableButton" class="submit-button disable-button">Disable Webhook</button>
-        </form>
+
+        <div class="button-group">
+            <button type="button" id="testButton" class="test-button">Test</button>
+            <button type="button" id="saveButton" class="submit-button">Save</button>
+        </div>
+        <button type="button" id="disableButton" class="disable-button">Disable</button>
 
         <div id="feedback" class="feedback"></div>
     </div>
 
     <script>
-        // Global variables
-        let chatId = null;
-        const API_BASE_URL = 'https://n8n.kmonlinesolutions.com/webhook/webhook_subscriber';
+        var chatId = null;
+        var API_BASE_URL = 'https://n8n.kmonlinesolutions.com/webhook/webhook_subscriber';
 
-        // DOM elements
-        const form = document.getElementById('webhookForm');
-        const webhookUrlInput = document.getElementById('webhookUrl');
-        const radioOptions = document.querySelectorAll('.radio-option');
-        const radioInputs = document.querySelectorAll('input[type="radio"]');
-        const submitButton = document.querySelector('.submit-button');
-        const disableButton = document.getElementById('disableButton');
-        const feedback = document.getElementById('feedback');
+        var webhookUrlInput = document.getElementById('webhookUrl');
+        var saveButton = document.getElementById('saveButton');
+        var disableButton = document.getElementById('disableButton');
+        var testButton = document.getElementById('testButton');
+        var feedback = document.getElementById('feedback');
+        var radioOptions = document.querySelectorAll('.radio-option');
+        var radioInputs = document.querySelectorAll('input[type="radio"]');
 
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             initializeApp();
             setupEventListeners();
         });
 
-        // Initialize the application
         function initializeApp() {
-            // Extract chat_id from URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
+            var urlParams = new URLSearchParams(window.location.search);
             chatId = urlParams.get('chat_id');
+
+            updateRadioStyles();
 
             if (chatId) {
                 loadExistingConfiguration();
             } else {
-                showFeedback('No chat ID provided in URL', 'error');
+                showFeedback('No chat ID provided in URL.', 'error');
+                setButtonsDisabled(true);
             }
         }
 
-        // Setup event listeners
         function setupEventListeners() {
-            // Form submission
-            form.addEventListener('submit', handleFormSubmission);
-            
-            // Disable button click
+            saveButton.addEventListener('click', handleFormSubmission);
             disableButton.addEventListener('click', handleDisableSubmission);
+            testButton.addEventListener('click', handleTestWebhook);
 
-            // Radio button interactions
-            radioOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    const radioInput = this.querySelector('input[type="radio"]');
+            radioOptions.forEach(function (option) {
+                option.addEventListener('click', function () {
+                    var radioInput = this.querySelector('input[type="radio"]');
                     if (radioInput) {
                         radioInput.checked = true;
-                        const event = new Event('change');
-                        radioInput.dispatchEvent(event);
+                        updateRadioStyles();
                     }
                 });
             });
 
-            radioInputs.forEach(input => {
+            radioInputs.forEach(function (input) {
                 input.addEventListener('change', updateRadioStyles);
             });
         }
 
-        // Update radio button styles for all groups
+        function setButtonsDisabled(state) {
+            saveButton.disabled = state;
+            testButton.disabled = state;
+            disableButton.disabled = state;
+        }
+
         function updateRadioStyles() {
-            document.querySelectorAll('input[type="radio"]').forEach(radio => {
-                const parentOption = radio.closest('.radio-option');
+            document.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+                var parentOption = radio.closest('.radio-option');
                 if (parentOption) {
                     if (radio.checked) {
                         parentOption.classList.add('selected');
@@ -369,126 +374,110 @@
             });
         }
 
-        // Load existing configuration
+        function closeApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.close();
+            }
+        }
+
         async function loadExistingConfiguration() {
+            showFeedback('Loading...', 'loading');
+
             try {
-                showFeedback('Loading...', 'loading');
-                
-                const response = await fetch(`${API_BASE_URL}?chat_id=${chatId}`);
-                
+                var response = await fetch(API_BASE_URL + '?chat_id=' + chatId);
+
                 if (response.ok) {
-                    const data = await response.json();
-                    
-                    let configData = null;
+                    var data = await response.json();
+                    var configData = null;
+
                     if (Array.isArray(data) && data.length > 0) {
-                        configData = data[0]; 
+                        configData = data[0];
                     } else if (data && !Array.isArray(data)) {
-                        configData = data; 
+                        configData = data;
                     }
-                    
+
                     if (configData) {
                         if (configData.webhook_url) {
                             webhookUrlInput.value = configData.webhook_url;
                         }
-                        
-                        const jobPreference = configData.job_preference || configData.webhook_preference;
+
+                        var jobPreference = configData.job_preference || configData.webhook_preference;
                         if (jobPreference) {
-                            const jobRadio = document.querySelector(`input[name="jobPreference"][value="${jobPreference}"]`);
+                            var jobRadio = document.querySelector('input[name="jobPreference"][value="' + jobPreference + '"]');
                             if (jobRadio) jobRadio.checked = true;
                         }
 
-                        const outputPreference = configData.webhook_output;
-                        if (outputPreference) {
-                            const outputRadio = document.querySelector(`input[name="webhookOutput"][value="${outputPreference}"]`);
-                            if (outputRadio) outputRadio.checked = true;
-                        }
-                        
                         updateRadioStyles();
                     }
-                    
+
                     hideFeedback();
+                    setButtonsDisabled(false);
                 } else if (response.status === 404) {
                     hideFeedback();
+                    setButtonsDisabled(false);
                 } else {
-                    throw new Error(`Server error: ${response.status}`);
+                    throw new Error('Server error: ' + response.status);
                 }
             } catch (error) {
-                if (error.name === 'TypeError' || error.message.includes('Server error')) {
-                    console.error('Error loading configuration:', error);
-                    showFeedback('Unable to connect to server. You can still save new settings.', 'error');
-                } else {
-                    hideFeedback();
-                }
+                showFeedback('Unable to load existing settings. You can still save new settings.', 'error');
+                setButtonsDisabled(false);
             }
         }
-        
-        // Handle disable submission
+
         async function handleDisableSubmission() {
             if (!chatId) {
                 showFeedback('No chat ID available. Cannot disable webhook.', 'error');
                 return;
             }
 
-            try {
-                submitButton.disabled = true;
-                disableButton.disabled = true;
-                disableButton.textContent = 'Disabling...';
+            setButtonsDisabled(true);
+            disableButton.textContent = 'Disabling...';
 
-                const requestData = {
+            try {
+                var requestData = {
                     webhook_url: null,
                     job_preference: null,
                     webhook_output: null,
                     chat_id: chatId
                 };
 
-                const response = await fetch(API_BASE_URL, {
+                var response = await fetch(API_BASE_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestData)
                 });
 
                 if (response.ok) {
                     showFeedback('Webhook disabled successfully!', 'success');
-                    
-                    setTimeout(() => {
-                        if (window.Telegram && window.Telegram.WebApp) {
-                            window.Telegram.WebApp.close();
-                        } else {
-                            if (confirm('Webhook disabled! Close this window?')) {
-                                window.close();
-                            }
-                        }
-                    }, 100);
+                    setTimeout(closeApp, 1000);
                 } else {
-                    throw new Error(`Server responded with status ${response.status}`);
+                    throw new Error('Server responded with status ' + response.status);
                 }
             } catch (error) {
-                console.error('Error disabling webhook:', error);
                 showFeedback('Failed to disable webhook. Please try again.', 'error');
-            } finally {
-                submitButton.disabled = false;
-                disableButton.disabled = false;
-                disableButton.textContent = 'Disable Webhook';
+                setButtonsDisabled(false);
+                disableButton.textContent = 'Disable';
             }
         }
 
-        // Handle form submission
-        async function handleFormSubmission(event) {
-            event.preventDefault();
-            
+        async function handleFormSubmission() {
             if (!chatId) {
                 showFeedback('No chat ID available. Cannot save configuration.', 'error');
                 return;
             }
 
-            const webhookUrl = webhookUrlInput.value.trim();
-            const jobPreference = document.querySelector('input[name="jobPreference"]:checked')?.value;
-            const webhookOutput = document.querySelector('input[name="webhookOutput"]:checked')?.value;
+            var webhookUrl = webhookUrlInput.value.trim();
+            var jobPreference = document.querySelector('input[name="jobPreference"]:checked');
 
             if (!webhookUrl) {
                 showFeedback('Please enter a webhook URL.', 'error');
+                return;
+            }
+
+            try {
+                new URL(webhookUrl);
+            } catch (e) {
+                showFeedback('Please enter a valid URL.', 'error');
                 return;
             }
 
@@ -496,78 +485,92 @@
                 showFeedback('Please select a job preference.', 'error');
                 return;
             }
-            
-            if (!webhookOutput) {
-                showFeedback('Please select a Webhook Output format.', 'error');
-                return;
-            }
+
+            setButtonsDisabled(true);
+            saveButton.textContent = 'Saving...';
 
             try {
-                new URL(webhookUrl);
-            } catch (error) {
-                showFeedback('Please enter a valid URL.', 'error');
-                return;
-            }
-
-            try {
-                submitButton.disabled = true;
-                disableButton.disabled = true;
-                submitButton.textContent = 'Saving...';
-
-                const requestData = {
+                var requestData = {
                     webhook_url: webhookUrl,
                     chat_id: chatId,
-                    job_preference: jobPreference,
-                    webhook_output: webhookOutput 
+                    job_preference: jobPreference.value,
+                    webhook_output: 'JSON'
                 };
 
-                const response = await fetch(API_BASE_URL, {
+                var response = await fetch(API_BASE_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestData)
                 });
 
                 if (response.ok) {
                     showFeedback('Configuration saved successfully!', 'success');
-                    
-                    setTimeout(() => {
-                        if (window.Telegram && window.Telegram.WebApp) {
-                            window.Telegram.WebApp.close();
-                        } else {
-                            if (confirm('Configuration saved! Close this window?')) {
-                                window.close();
-                            }
-                        }
-                    }, 100);
+                    setTimeout(closeApp, 1000);
                 } else {
-                    throw new Error(`Server responded with status ${response.status}`);
+                    throw new Error('Server responded with status ' + response.status);
                 }
             } catch (error) {
-                console.error('Error saving configuration:', error);
                 showFeedback('Failed to save configuration. Please try again.', 'error');
-            } finally {
-                submitButton.disabled = false;
-                disableButton.disabled = false;
-                submitButton.textContent = 'Save Configuration';
+                setButtonsDisabled(false);
+                saveButton.textContent = 'Save';
             }
         }
 
-        // Show feedback message
+        async function handleTestWebhook() {
+            var webhookUrl = webhookUrlInput.value.trim();
+
+            if (!webhookUrl) {
+                showFeedback('Please enter a webhook URL to test.', 'error');
+                return;
+            }
+
+            try {
+                new URL(webhookUrl);
+            } catch (e) {
+                showFeedback('Please enter a valid URL to test.', 'error');
+                return;
+            }
+
+            setButtonsDisabled(true);
+            testButton.textContent = 'Testing...';
+            showFeedback('Sending test payload...', 'loading');
+
+            try {
+                var testPayload = {
+                    test: true,
+                    chat_id: chatId,
+                    message: 'This is a test from KM Gig Alerts webhook configuration.'
+                };
+
+                var response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testPayload)
+                });
+
+                if (response.ok) {
+                    showFeedback('Test successful! Your webhook received the payload.', 'success');
+                } else {
+                    showFeedback('Webhook responded with status ' + response.status + '. Check your endpoint.', 'error');
+                }
+            } catch (error) {
+                showFeedback('Failed to reach webhook URL. Check the URL and try again.', 'error');
+            } finally {
+                setButtonsDisabled(false);
+                testButton.textContent = 'Test';
+            }
+        }
+
         function showFeedback(message, type) {
             feedback.textContent = message;
-            feedback.className = `feedback ${type}`;
+            feedback.className = 'feedback ' + type;
             feedback.style.display = 'block';
 
-            if (type === 'success') {
-                setTimeout(() => {
-                    hideFeedback();
-                }, 5000);
+            if (type === 'success' || type === 'error') {
+                setTimeout(hideFeedback, 5000);
             }
         }
 
-        // Hide feedback message
         function hideFeedback() {
             feedback.style.display = 'none';
             feedback.className = 'feedback';
