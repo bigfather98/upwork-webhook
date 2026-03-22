@@ -84,6 +84,23 @@
             border-color: var(--upwork-green);
         }
 
+        .input-hint {
+            display: block;
+            margin-top: 0.4rem;
+            font-size: 0.8rem;
+            color: var(--upwork-text-gray);
+            line-height: 1.4;
+        }
+
+        .input-hint code {
+            background-color: var(--upwork-medium-gray);
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            color: var(--upwork-dark-gray);
+        }
+
         .radio-group {
             display: flex;
             flex-direction: column;
@@ -272,11 +289,12 @@
 </head>
 <body>
     <div class="main-container">
-        <h1>Webhook Setup</h1>
+        <h1>Webhook Configuration</h1>
 
         <div class="form-group">
             <label for="webhookUrl">Webhook URL:</label>
-            <input type="text" id="webhookUrl" name="webhookUrl" placeholder="Enter your webhook URL">
+            <input type="text" id="webhookUrl" name="webhookUrl" placeholder="https://your-domain.com/webhook/your-path">
+            <small class="input-hint">Must accept <strong>POST</strong> requests with a JSON body.</small>
         </div>
 
         <div class="form-group">
@@ -536,25 +554,19 @@
             showFeedback('Sending test payload...', 'loading');
 
             try {
-                var testPayload = {
-                    test: true,
-                    chat_id: chatId,
-                    message: 'This is a test from KM Gig Alerts webhook configuration.'
-                };
-
-                var response = await fetch(webhookUrl, {
+                var response = await fetch('https://webhook.kmgigalerts.com/webhook/test-webhook-setup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(testPayload)
+                    body: JSON.stringify({ webhook_url: webhookUrl })
                 });
 
                 if (response.ok) {
                     showFeedback('Test successful! Your webhook received the payload.', 'success');
                 } else {
-                    showFeedback('Webhook responded with status ' + response.status + '. Check your endpoint.', 'error');
+                    showFeedback('Test failed. Server responded with status ' + response.status + '.', 'error');
                 }
             } catch (error) {
-                showFeedback('Failed to reach webhook URL. Check the URL and try again.', 'error');
+                showFeedback('Failed to reach the test endpoint. Please try again.', 'error');
             } finally {
                 setButtonsDisabled(false);
                 testButton.textContent = 'Test';
